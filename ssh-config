@@ -1,0 +1,5 @@
+# Host *
+#   ServerAliveInterval 60
+#   StrictHostKeyChecking accept-new
+#   HashKnownHosts no
+#   HostKeyAlgorithms=+ssh-rsa

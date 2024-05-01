@@ -1,0 +1,5 @@
+salt-ssh:
+  roster_file: '/salt/roster.sls'
+  # ssh_max_procs: 30
+  # ssh_wipe: false
+  # ssh_ignore_host_keys: false

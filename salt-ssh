@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+
+function _echo_to_stderr_and_exit_with_error {
+  printf "%s\n" "${@}" >&2; exit 1
+}
+
+function _check_image_exist {
+  local image="${1}"
+  local tag="${2}"
+
+  docker image inspect "${image}:${tag}" &>/dev/null
+}
+
+function _build_image {
+  local image="${1}"
+  local tag="${2}"
+
+  [[ -f "${SCRIPT_DIR}/Dockerfile" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'Dockerfile' - аварийный выход"
+  sudo docker build . --tag "${image}:${tag}"
+}
+
+function _preflight {
+  if ! _check_image_exist "${SALT_SSH_DOCKER_IMAGE}" "${SALT_SSH_DOCKER_TAG}"; then
+    _build_image "${SALT_SSH_DOCKER_IMAGE}" "${SALT_SSH_DOCKER_TAG}" \
+    || _echo_to_stderr_and_exit_with_error "Не удалось собрать докер образ - аварийный выход"
+  fi
+
+  [[ -d "${SCRIPT_DIR}/states" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует каталог 'states' - аварийный выход"
+  [[ -d "${SCRIPT_DIR}/pillars" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует каталог 'pillars' - аварийный выход"
+  [[ -d "${SCRIPT_DIR}/ssh_keys" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует каталог 'ssh_keys' - аварийный выход"
+  [[ -f "${SCRIPT_DIR}/master" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'master' - аварийный выход"
+  [[ -f "${SCRIPT_DIR}/roster.sls" ]] || _echo_echo_to_stderr_and_exit_with_error_to_stderr "Отсутствует файл 'roster.sls' - аварийный выход"
+  [[ -f "${SCRIPT_DIR}/Saltfile" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'Saltfile' - аварийный выход"
+  [[ -f "${SCRIPT_DIR}/ssh-config" ]] || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'ssh-config' - аварийный выход"
+}
+
+function _run_container {
+  docker run \
+  --rm \
+  --interactive \
+  --tty \
+  --network host \
+  --volume "${SCRIPT_DIR}/states:/salt/states" \
+  --volume "${SCRIPT_DIR}/pillars:/salt/pillars" \
+  --volume "${SCRIPT_DIR}/ssh_keys:/salt/ssh_keys" \
+  --volume "${SCRIPT_DIR}/master:/etc/salt/master" \
+  --volume "${SCRIPT_DIR}/roster.sls:/salt/roster.sls" \
+  --volume "${SCRIPT_DIR}/Saltfile:/salt/Saltfile" \
+  --volume "${SCRIPT_DIR}/ssh-config:/etc/ssh/ssh_config" \
+  "${SALT_SSH_DOCKER_IMAGE}:${SALT_SSH_DOCKER_TAG}" \
+  salt-ssh \
+  ${SALT_SSH_ARGS} \
+  ${@}
+}
+
+function _main {
+  SCRIPT_DIR="$( dirname -- "$( readlink -f -- "$0"; )"; )"
+
+  [[ -f "${SCRIPT_DIR}/salt-ssh-env.sh" ]] \
+  && source "${SCRIPT_DIR}/salt-ssh-env.sh" \
+  || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'salt-ssh-env.sh' - аварийный выход"
+  _preflight
+  _run_container "${@}"
+}
+
+
+_main "${@}"

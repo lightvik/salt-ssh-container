@@ -1,0 +1,8 @@
+file_roots:
+  base:
+    - /salt/states
+pillar_roots:
+  base:
+    - /salt/pillars
+# state_output: changes
+# failhard: true

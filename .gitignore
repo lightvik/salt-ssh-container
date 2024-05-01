@@ -1,3 +1,3 @@
-# /states/*
-# /pillars/*
-# /ssh_keys/*
+/states/*
+/pillars/*
+/ssh_keys/*

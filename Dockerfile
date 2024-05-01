@@ -17,6 +17,3 @@ ADD https://repo.saltproject.io/salt/py3/redhat/9/x86_64/minor/${SALTSTACK_VERSI
 RUN microdnf install -y openssh-clients salt-ssh
 
 WORKDIR /salt
-
-# ENTRYPOINT salt-ssh
-# CMD []

@@ -1,0 +1,36 @@
+osenv:
+  driver: env
+
+fileserver_backend:
+    - roots
+    - gitfs
+
+file_roots:
+  base:
+    - /salt/states
+pillar_roots:
+  base:
+    - /salt/pillars
+
+gitfs_provider: pygit2
+gitfs_user: sdb://osenv/GIT_LOGIN
+gitfs_password: sdb://osenv/GIT_PASSWORD
+gitfs_ssl_verify: False
+gitfs_insecure_auth: True
+gitfs_remotes:
+  - https://.git:
+    - saltenv:
+      - base:
+        - ref: master
+
+# ext_pillar_first: True
+git_pillar_provider: pygit2
+git_pillar_user: sdb://osenv/GIT_LOGIN
+git_pillar_password: sdb://osenv/GIT_PASSWORD
+git_pillar_ssl_verify: False
+git_pillar_insecure_auth: True
+pillar_gitfs_ssl_verify: False
+ext_pillar:
+  - git:
+    - master https://.git:
+      - env: base

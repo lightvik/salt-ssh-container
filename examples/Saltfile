@@ -1,5 +1,6 @@
 salt-ssh:
   roster_file: '/salt/roster.sls'
+  log_level: error
   # ssh_wipe: true
   # ignore_host_keys: true
   # ssh_max_procs: 30

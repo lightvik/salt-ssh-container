@@ -4,29 +4,27 @@
 function _echo_to_stderr_and_exit_with_error { printf "%s\n" "${@}" >&2; exit 1 ; }
 
 function _check_image_exist {
-  local image
-  local tag
-  image="${1}"
-  tag="${2}"
-
+  local image ; image="${1}"
+  local tag ; tag="${2}"
+  
   docker image inspect "${image}:${tag}" &>/dev/null
 }
 
 function _build_image {
-  local image
-  local tag
-  image="${1}"
-  tag="${2}"
+  local build_kwargs_string ; build_kwargs_string="$(for key in "${!SALT_SSH_DOCKER_BUILD_ARGS[@]}"; do echo "--build-arg=${key}=${SALT_SSH_DOCKER_BUILD_ARGS["${key}"]}" ; done)"
 
-  [[ -f "${SCRIPT_DIR}/Dockerfile" ]] \
-  || _echo_to_stderr_and_exit_with_error "Отсутствует файл 'Dockerfile' - аварийный выход"
-
-  sudo docker build . --tag "${image}:${tag}"
+  sudo docker build \
+  ${build_kwargs_string} \
+  --tag "${SALT_SSH_DOCKER_IMAGE}:${SALT_SSH_DOCKER_TAG}" \
+  "${SCRIPT_DIR}"
 }
 
 function _preflight {
   if ! _check_image_exist "${SALT_SSH_DOCKER_IMAGE}" "${SALT_SSH_DOCKER_TAG}"; then
-    _build_image "${SALT_SSH_DOCKER_IMAGE}" "${SALT_SSH_DOCKER_TAG}" \
+    _build_image \
+    "${SALT_SSH_DOCKER_IMAGE}" \
+    "${SALT_SSH_DOCKER_TAG}" \
+    "${SCRIPT_DIR}" \
     || _echo_to_stderr_and_exit_with_error "Не удалось собрать докер образ - аварийный выход"
   fi
 
@@ -40,6 +38,8 @@ function _preflight {
 }
 
 function _run_container {
+  local environment_kwargs_string ; environment_kwargs_string=("$(for key in "${!SALT_SSH_CONTAINER_ENVIRONMENT[@]}"; do echo "--env=${key}=${SALT_SSH_CONTAINER_ENVIRONMENT["${key}"]}" ; done)")
+
   docker run \
   --rm \
   --interactive \
@@ -52,9 +52,9 @@ function _run_container {
   --volume "${SCRIPT_DIR}/roster.sls:/salt/roster.sls" \
   --volume "${SCRIPT_DIR}/Saltfile:/salt/Saltfile" \
   --volume "${SCRIPT_DIR}/ssh-config:/etc/ssh/ssh_config" \
+  ${environment_kwargs_string[@]} \
   "${SALT_SSH_DOCKER_IMAGE}:${SALT_SSH_DOCKER_TAG}" \
-  salt-ssh \
-  ${SALT_SSH_ARGS} \
+  ${SALT_SSH_ARGS[@]} \
   "${@}"
 }
 

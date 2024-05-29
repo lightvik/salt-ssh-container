@@ -1,6 +1,7 @@
 /states/*
 /pillars/*
 /ssh_keys/*
+/master
 /roster.sls
 /salt-ssh-env.sh
 /Saltfile

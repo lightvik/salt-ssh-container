@@ -1,6 +1,7 @@
-ARG OS_VERSION
+ARG FROM_IMAGE
+ARG FROM_TAG
 
-FROM oraclelinux:${OS_VERSION:-9-slim}
+FROM $FROM_IMAGE:$FROM_TAG
 
 ARG OS_VERSION
 ARG PYGIT2_VERSION
@@ -16,7 +17,7 @@ ENV GPG_PUBKEY_URL "https://repo.saltproject.io/salt/py3/redhat/${OS_VERSION}/${
 
 LABEL org.opencontainers.image.authors="${IMAGE_AUTHOR}"
 
-RUN rpm --import https://repo.saltproject.io/salt/py3/redhat/${OS_VERSION}/x86_64/SALT-PROJECT-GPG-PUBKEY-2023.pub
+RUN rpm --import "${GPG_PUBKEY_URL}"
 
 ADD https://repo.saltproject.io/salt/py3/redhat/9/x86_64/minor/${SALTSTACK_VERSION}.repo /etc/yum.repos.d/salt.repo
 
@@ -25,7 +26,7 @@ RUN microdnf install -y openssh-clients salt-ssh binutils patchelf
 
 RUN salt-pip install pygit2==${PYGIT2_VERSION}
 
-# WORKDIR /salt
+WORKDIR /salt
 
 ENTRYPOINT [ "salt-ssh" ]
 
